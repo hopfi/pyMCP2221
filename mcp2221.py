@@ -199,15 +199,15 @@ class MCP2221:
         ret = self.get_status()
         adc_value = []
 
-        if adc_id == MCP2221.ADC_ALL:
+        if adc_id == MCP2221.C_ADC_ALL:
             adc_value.append(int(ret[51]) << 8) + int(ret[50])
             adc_value.append(int(ret[53]) << 8) + int(ret[52])
             adc_value.append(int(ret[55]) << 8) + int(ret[54])
-        elif adc_id == MCP2221.ADC_1:
+        elif adc_id == MCP2221.C_ADC_1:
             adc_value = (int(ret[51]) << 8) + int(ret[50])
-        elif adc_id == MCP2221.ADC_2:
+        elif adc_id == MCP2221.C_ADC_2:
             adc_value = (int(ret[53]) << 8) + int(ret[52])
-        elif adc_id == MCP2221.ADC_3:
+        elif adc_id == MCP2221.C_ADC_3:
             adc_value = (int(ret[55]) << 8) + int(ret[54])
         else:
             raise ValueError("Value did not match the available choices!")
@@ -220,7 +220,7 @@ class MCP2221:
     def get_flash(self, subcode):
         msg = [0x00] * MCP2221.C_MESSAGE_LEN
         msg[0] = MCP2221.C_CC_RD_FLASH
-        msg[1] = MCP2221.C_FLASH_SUBCODE[subcode]
+        msg[1] = subcode
         ret = self.send_data(msg, timeout=1000)
         
         return ret
@@ -234,14 +234,14 @@ class MCP2221:
     def set_flash(self, subcode, data):
         msg = [0x00] * MCP2221.C_MESSAGE_LEN
         msg[0] = MCP2221.C_CC_WR_FLASH
-        msg[1] = hex(subcode)
-        msg.extend(data)
+        msg[1] = subcode
+        msg[2:2+len(data)] = data
         ret = self.send_data(msg, timeout=1000)
 
         return ret[1]
 
     def set_chip_settings(self, general=None, clk_out_div=None, dac_settings=None, adc_intrpt_settings=None, pid_vid_settings=None, usb_pwr_settings=None, flash_pw=None ):
-        content = self.get_flash(MCP2221.C_FLASH_SUBCODE["chip_settings"])[4:13].copy()
+        content = self.get_flash(MCP2221.C_FLASH_SUBCODE["chip_settings"])[4:14]
         if general != None:
             content[0] = general
         if clk_out_div != None:
@@ -338,7 +338,7 @@ class MCP2221:
             return config
 
     def set_flash_gpio(self, gpio0=None, gpio1=None, gpio2=None, gpio3=None):
-        content = self.get_flash(MCP2221.C_FLASH_SUBCODE["chip_settings"])[4:13].copy()
+        content = self.get_flash(MCP2221.C_FLASH_SUBCODE["gp_settings"])[4:8]
         if gpio0 != None:
             content[0] = self.get_gpio_config(0, gpio0)
         if gpio1 != None:
@@ -348,7 +348,7 @@ class MCP2221:
         if gpio3 != None:
             content[3] = self.get_gpio_config(3, gpio3)
 
-        ret = self.set_flash(MCP2221.C_FLASH_SUBCODE["gpio_settings"], content)
+        ret = self.set_flash(MCP2221.C_FLASH_SUBCODE["gp_settings"], content)
         return ret
     
     def set_flash_usb_manu(self, manufacturer_desc):
@@ -670,3 +670,7 @@ class MCP2221:
 
         self.write_data(msg, self.C_TIMEOUT)
         return 0
+
+
+if __name__ == "__main__":
+    pass
